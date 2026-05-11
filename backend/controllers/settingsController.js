@@ -7,7 +7,7 @@ const defaultSettings = [
   { key: 'late_payment_penalty', value: 200, description: 'Penalty for late payment' },
   { key: 'max_loan_multiplier', value: 3, description: 'Max loan = savings × multiplier' },
   { key: 'group_name', value: 'Community Saving Group', description: 'Name of the saving group' },
-  { key: 'currency', value: 'TZS', description: 'Currency used' },
+  { key: 'currency', value: 'RWF', description: 'Currency used' },
 ];
 
 // @desc  Get all settings

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
+import MobileMoneyPopup from '../components/MobileMoneyPopup';
 import {
   Plus, CheckCircle, XCircle, DollarSign, Eye,
   PiggyBank, AlertTriangle, Clock, Receipt,
@@ -27,7 +28,7 @@ function BalanceBar({ used, max }) {
 }
 
 /* ── Payment method selector (reusable) ── */
-function PayMethodSelector({ value, onChange }) {
+function PayMethodSelector({ value, onChange, onMobileMoneyClick }) {
   const methods = [
     { value: 'cash', label: 'Cash', icon: <Receipt size={20} /> },
     { value: 'mobile_money', label: 'Mobile Money', icon: <Smartphone size={20} /> },
@@ -38,7 +39,11 @@ function PayMethodSelector({ value, onChange }) {
       {methods.map(m => (
         <label key={m.value} className={`pay-method-card ${value === m.value ? 'selected' : ''}`}>
           <input type="radio" name="loanPayMethod" value={m.value}
-            checked={value === m.value} onChange={() => onChange(m.value)} />
+            checked={value === m.value}
+            onChange={() => {
+              onChange(m.value);
+              if (m.value === 'mobile_money' && onMobileMoneyClick) onMobileMoneyClick();
+            }} />
           {m.icon}
           <span>{m.label}</span>
         </label>
@@ -59,6 +64,7 @@ export default function Loans() {
   const [showApprove, setShowApprove] = useState(false);
   const [showRepay, setShowRepay] = useState(false);
   const [showView, setShowView] = useState(false);
+  const [showMobileMoney, setShowMobileMoney] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
 
   // Forms
@@ -367,6 +373,7 @@ export default function Loans() {
                 <PayMethodSelector
                   value={repayForm.paymentMethod}
                   onChange={v => setRepayForm({ ...repayForm, paymentMethod: v, paymentReference: '' })}
+                  onMobileMoneyClick={() => setShowMobileMoney(true)}
                 />
               </div>
 
@@ -586,6 +593,23 @@ export default function Loans() {
           </div>
         )}
       </Modal>
+
+      {/* ── Mobile Money Popup ── */}
+      <MobileMoneyPopup
+        isOpen={showMobileMoney}
+        onClose={() => setShowMobileMoney(false)}
+        amount={repayForm.amount || selectedLoan?.balance || 0}
+        saving={saving}
+        onConfirm={({ phone, network, txId }) => {
+          setRepayForm(f => ({
+            ...f,
+            paymentReference: txId,
+            notes: f.notes || `Mobile Money: ${phone} (${network})`,
+          }));
+          setShowMobileMoney(false);
+          toast.success('Mobile Money details saved!');
+        }}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
+import MobileMoneyPopup from '../components/MobileMoneyPopup';
 import {
   Plus, CheckCircle, Trash2, AlertTriangle,
   CreditCard, Smartphone, Building2, Receipt
@@ -37,6 +38,7 @@ export default function Penalties() {
 
   // Pay modal (member + manager)
   const [showPay, setShowPay] = useState(false);
+  const [showMobileMoney, setShowMobileMoney] = useState(false);
   const [selectedPenalty, setSelectedPenalty] = useState(null);
   const [payForm, setPayForm] = useState({ paymentMethod: 'cash', paymentReference: '', notes: '' });
 
@@ -262,8 +264,7 @@ export default function Penalties() {
         {selectedPenalty && (
           <>
             {/* Penalty summary card */}
-            <div className="penalty-pay-summary">
-              <div className="pps-row">
+            <div className="penalty-pay-summary">              <div className="pps-row">
                 <span>Reason</span>
                 <strong>{selectedPenalty.reason}</strong>
               </div>
@@ -310,7 +311,12 @@ export default function Penalties() {
                         name="paymentMethod"
                         value={value}
                         checked={payForm.paymentMethod === value}
-                        onChange={e => setPayForm({ ...payForm, paymentMethod: e.target.value, paymentReference: '' })}
+                        onChange={e => {
+                          const method = e.target.value;
+                          setPayForm({ ...payForm, paymentMethod: method, paymentReference: '' });
+                          // Open mobile money popup immediately
+                          if (method === 'mobile_money') setShowMobileMoney(true);
+                        }}
                       />
                       {icon}
                       <span>{label}</span>
@@ -319,20 +325,37 @@ export default function Penalties() {
                 </div>
               </div>
 
-              {/* Reference field for non-cash */}
-              {payForm.paymentMethod !== 'cash' && (
+              {/* Show reference for bank transfer */}
+              {payForm.paymentMethod === 'bank_transfer' && (
                 <div className="form-group">
-                  <label>
-                    {payForm.paymentMethod === 'mobile_money' ? 'Mobile Money Transaction ID' : 'Bank Reference / Slip No.'}
-                  </label>
+                  <label>Bank Reference / Slip No. *</label>
                   <input
                     type="text"
                     value={payForm.paymentReference}
                     onChange={e => setPayForm({ ...payForm, paymentReference: e.target.value })}
-                    placeholder={payForm.paymentMethod === 'mobile_money' ? 'e.g. ABC123456' : 'e.g. TXN-2025-001'}
+                    placeholder="e.g. TXN-2025-001"
                     required
                   />
                 </div>
+              )}
+
+              {/* Show confirmed mobile money info */}
+              {payForm.paymentMethod === 'mobile_money' && payForm.paymentReference && (
+                <div className="mm-confirmed">
+                  <CheckCircle size={16} />
+                  <span>Mobile Money confirmed — Ref: <strong>{payForm.paymentReference}</strong></span>
+                  <button type="button" className="btn-link" onClick={() => setShowMobileMoney(true)}>
+                    Change
+                  </button>
+                </div>
+              )}
+
+              {/* Prompt to fill mobile money if not done */}
+              {payForm.paymentMethod === 'mobile_money' && !payForm.paymentReference && (
+                <button type="button" className="btn btn-primary btn-sm mm-open-btn"
+                  onClick={() => setShowMobileMoney(true)}>
+                  <Smartphone size={15} /> Enter Mobile Money Details
+                </button>
               )}
 
               <div className="form-group">
@@ -356,6 +379,22 @@ export default function Penalties() {
           </>
         )}
       </Modal>
+      {/* ── Mobile Money Popup ── */}
+      <MobileMoneyPopup
+        isOpen={showMobileMoney}
+        onClose={() => setShowMobileMoney(false)}
+        amount={selectedPenalty?.amount || 0}
+        saving={saving}
+        onConfirm={({ phone, network, txId }) => {
+          setPayForm(f => ({
+            ...f,
+            paymentReference: txId,
+            notes: f.notes || `Mobile Money: ${phone} (${network})`,
+          }));
+          setShowMobileMoney(false);
+          toast.success('Mobile Money details saved!');
+        }}
+      />
     </div>
   );
 }

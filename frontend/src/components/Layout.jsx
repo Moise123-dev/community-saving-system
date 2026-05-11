@@ -1,29 +1,31 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   LayoutDashboard, Users, PiggyBank, HandCoins, AlertTriangle,
   CalendarCheck, BookOpen, BarChart3, Settings, LogOut,
-  Menu, X, ChevronRight, Bell, Shield, ShieldCheck
+  Menu, X, ChevronRight, Bell, Shield, ShieldCheck, Globe
 } from 'lucide-react';
-
-const navItems = [
-  { to: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/app/members', label: 'Members', icon: Users, managerOnly: true },
-  { to: '/app/savings', label: 'Savings', icon: PiggyBank },
-  { to: '/app/loans', label: 'Loans', icon: HandCoins },
-  { to: '/app/penalties', label: 'Penalties', icon: AlertTriangle },
-  { to: '/app/attendance', label: 'Attendance', icon: CalendarCheck },
-  { to: '/app/accounting', label: 'Accounting', icon: BookOpen, managerOnly: true },
-  { to: '/app/reports', label: 'Reports', icon: BarChart3, managerOnly: true },
-  { to: '/app/settings', label: 'Settings', icon: Settings, managerOnly: true },
-  { to: '/app/audit', label: 'Audit Trail', icon: Shield, managerOnly: true },
-];
 
 export default function Layout() {
   const { user, logout, isManager } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const navItems = [
+    { to: '/app/dashboard', label: t('dashboard'), icon: LayoutDashboard },
+    { to: '/app/members', label: t('members'), icon: Users, managerOnly: true },
+    { to: '/app/savings', label: t('savings'), icon: PiggyBank },
+    { to: '/app/loans', label: t('loans'), icon: HandCoins },
+    { to: '/app/penalties', label: t('penalties'), icon: AlertTriangle },
+    { to: '/app/attendance', label: t('attendance'), icon: CalendarCheck },
+    { to: '/app/accounting', label: t('accounting'), icon: BookOpen, managerOnly: true },
+    { to: '/app/reports', label: t('reports'), icon: BarChart3, managerOnly: true },
+    { to: '/app/settings', label: t('settings'), icon: Settings, managerOnly: true },
+    { to: '/app/audit', label: t('auditTrail'), icon: Shield, managerOnly: true },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -31,7 +33,6 @@ export default function Layout() {
   };
 
   const visibleNav = navItems.filter((item) => !item.managerOnly || isManager);
-
   return (
     <div className="layout">
       {/* Sidebar */}
@@ -81,7 +82,7 @@ export default function Layout() {
               </div>
             )}
           </div>
-          <button className="logout-btn" onClick={handleLogout} title="Logout">
+          <button className="logout-btn" onClick={handleLogout} title={t('logout')}>
             <LogOut size={18} />
           </button>
         </div>
@@ -98,8 +99,11 @@ export default function Layout() {
           <div className="topbar-right">
             <div className={`topbar-role ${isManager ? 'tr-manager' : 'tr-member'}`}>
               {isManager ? <ShieldCheck size={15} /> : <Users size={15} />}
-              <span>{isManager ? 'Manager' : 'Member'}</span>
+              <span>{isManager ? t('manager') : t('member')}</span>
             </div>
+            <button className="icon-btn" title="Change Language" onClick={() => navigate('/language')}>
+              <Globe size={20} />
+            </button>
             <button className="icon-btn" title="Notifications">
               <Bell size={20} />
             </button>
